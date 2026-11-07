@@ -13,31 +13,46 @@ if not exist .git (
 git add .
 set "MSG=SuperViewer iOS update"
 git commit -m "%MSG%" >nul 2>nul
-if errorlevel 1 (
-    echo [SKIP] no new changes to commit
-) else (
-    echo [COMMIT] %MSG%
-)
+if errorlevel 1 goto :skip_commit
+echo [COMMIT] %MSG%
+goto :check_remote
+:skip_commit
+echo [SKIP] nothing new to commit - existing commits will be pushed
 
+:check_remote
 git remote get-url origin >nul 2>nul
-if errorlevel 1 (
-    echo.
-    set /p REMOTE=Paste your repo URL (https://github.com/YOU/superviewer-ios.git):
-    if "%REMOTE%"=="" (echo [ERROR] repo URL required & pause & exit /b 1)
-    git remote add origin "%REMOTE%"
-)
+if errorlevel 1 goto :need_remote
 
 echo.
-echo [PUSH] first push will open a browser for GitHub login ...
+echo [PUSH] pushing to GitHub. First time: a browser window opens for login ...
 git push -u origin main
-if errorlevel 1 (
-    echo.
-    echo [FAILED] common causes:
-    echo   1. repo not created yet - create an EMPTY repo on github.com first
-    echo   2. no permission - run this script again to login again
-) else (
-    echo.
-    echo [OK] open your repo page - Actions - Build IPA - Run workflow
-)
+if errorlevel 1 goto :push_fail
+echo.
+echo [OK] done. Open your repo page - Actions tab - "Build IPA" - Run workflow.
+git remote get-url origin
+goto :end
+
+:need_remote
+echo.
+echo Create an EMPTY repo on github.com first:  New repository - name superviewer-ios - Private - NO README
+echo.
+set /p REMOTE=Paste repo URL, like https://github.com/YourName/superviewer-ios.git :
+if "%REMOTE%"=="" goto :no_url
+git remote add origin "%REMOTE%"
+echo [REMOTE] %REMOTE%
+goto :check_remote
+
+:no_url
+echo [ERROR] repo URL required.
+goto :end
+
+:push_fail
+echo.
+echo [FAILED] common causes:
+echo   1. repo not created yet - create an EMPTY repo on github.com first, then re-run
+echo   2. wrong URL / no permission - re-run and paste the URL again
+echo   3. browser login window was closed - re-run to login again
+
+:end
 echo.
 pause
