@@ -1,0 +1,41 @@
+name: SuperViewer
+options:
+  bundleIdPrefix: com.superviewer
+  deploymentTarget:
+    iOS: "15.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"   # Xcode 只接受 4.0/4.2/5.0/6.0 语言模式, "5.9" 会直接编译失败
+    CODE_SIGN_STYLE: Automatic
+    CODE_SIGNING_ALLOWED: "NO"
+targets:
+  SuperViewer:
+    type: application
+    platform: iOS
+    sources:
+      - Sources
+    info:
+      path: Sources/Info.plist
+      properties:
+        CFBundleDisplayName: SuperViewer
+        CFBundleShortVersionString: "1.0.0"
+        CFBundleVersion: "1"
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        NSLocalNetworkUsageDescription: 需要连接局域网内的 SuperViewer 被控端进行远程控制
+        ITSAppUsesNonExemptEncryption: false
+schemes:
+  SuperViewer:
+    build:
+      targets:
+        SuperViewer: all
+    run:
+      config: Debug
+    archive:
+      config: Release

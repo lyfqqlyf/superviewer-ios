@@ -1,0 +1,50 @@
+name: Build IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    # macos-14 镜像已退役（报错 'macos-14-arm64-us-default' is not supported）
+    # 用 macos-latest；如需固定可改为 macos-15
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Archive (unsigned)
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project SuperViewer.xcodeproj \
+            -scheme SuperViewer \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/SuperViewer.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM="" \
+            | tail -40
+
+      - name: Package IPA
+        run: |
+          mkdir -p build/Payload
+          cp -R "build/SuperViewer.xcarchive/Products/Applications/SuperViewer.app" build/Payload/
+          cd build
+          zip -qry SuperViewer-unsigned.ipa Payload
+          ls -lh SuperViewer-unsigned.ipa
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SuperViewer-unsigned-ipa
+          path: build/SuperViewer-unsigned.ipa
+          retention-days: 30
