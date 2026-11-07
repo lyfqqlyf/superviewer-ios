@@ -4,6 +4,11 @@ on:
   workflow_dispatch:
   push:
     branches: [ main, master ]
+    paths-ignore:
+      - "build-errors.txt"
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -34,13 +39,28 @@ jobs:
             DEVELOPMENT_TEAM="" \
             2>&1 | tee build_full.log
 
-      - name: Print all compile errors
+      - name: Show compile errors
         if: failure()
         run: |
           echo "========== ALL ERRORS =========="
-          grep -h "error:" build_full.log | sed 's/^.*Sources\/(Sources\/[0-9]*\/)?//' | sort -u | head -80
+          grep -h "error:" build_full.log | sort -u | head -80 || echo "(no error: lines found)"
           echo "========== END =========="
-          exit 1
+
+      # 失败时把错误日志自动提交回仓库, 方便远程诊断 (commit 带 [skip ci] 防死循环)
+      - name: Commit error log back
+        if: failure()
+        run: |
+          { echo "=== build errors (unique) ==="
+            grep -h "error:" build_full.log | sort -u || true
+            echo ""
+            echo "=== log tail ==="
+            tail -50 build_full.log
+          } > build-errors.txt
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@local"
+          git add build-errors.txt
+          git commit -m "ci: build errors [skip ci]" || true
+          git push || true
 
       - name: Package IPA
         run: |
