@@ -130,7 +130,7 @@ final class ConnectionViewController: UIViewController {
         connectBtn.isEnabled = false
         spinner.startAnimating()
 
-        API.shared.login(code: code) { [weak self] (result: Result<LoginResp, String>) in
+        API.shared.login(code: code) { [weak self] (result: Result<LoginResp, APIError>) in
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 self.connectBtn.isEnabled = true
@@ -144,8 +144,8 @@ final class ConnectionViewController: UIViewController {
                         animated: true)
                     self.codeField.text = ""
                     self.errLabel.text = ""
-                case .failure(let msg):
-                    self.errLabel.text = msg
+                case .failure(let e):
+                    self.errLabel.text = e.message
                 }
             }
         }

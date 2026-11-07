@@ -39,7 +39,7 @@ final class FilesViewController: UIViewController, UITableViewDataSource, UITabl
     // MARK: - 数据
     private func load() {
         let p = path.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        API.shared.getJSON("api/fs/list?path=\(p)") { [weak self] (r: Result<JSONDict, String>) in
+        API.shared.getJSON("api/fs/list?path=\(p)") { [weak self] (r: Result<JSONDict, APIError>) in
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 switch r {
@@ -50,8 +50,8 @@ final class FilesViewController: UIViewController, UITableViewDataSource, UITabl
                     if let cur = d["path"] as? String, !cur.isEmpty { self.path = cur }
                     self.title = self.path.isEmpty ? "远程文件" : (self.path as NSString).lastPathComponent
                     self.table.reloadData()
-                case .failure(let msg):
-                    self.alert(msg)
+                case .failure(let e):
+                    self.alert(e.message)
                 }
             }
         }
@@ -195,7 +195,7 @@ final class FilesViewController: UIViewController, UITableViewDataSource, UITabl
 extension FilesViewController: UIDocumentPickerDelegate {
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
         for u in urls {
-            API.shared.upload(path: "api/fs/upload", remoteDir: path, fileURL: u) { (r: Result<Bool, String>) in
+            API.shared.upload(path: "api/fs/upload", remoteDir: path, fileURL: u) { (r: Result<Bool, APIError>) in
                 DispatchQueue.main.async {
                     self.alert((try? r.get()) != nil ? "上传完成" : "上传失败")
                     self.load()

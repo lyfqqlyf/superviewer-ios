@@ -2,6 +2,11 @@ import Foundation
 
 typealias JSONDict = [String: Any]
 
+/// API 错误封装 (Result 的 Failure 必须遵循 Error, String 不行)
+struct APIError: Error {
+    let message: String
+}
+
 struct LoginResp: Decodable {
     let ok: Bool
     let device_id: String?
@@ -47,45 +52,46 @@ final class API {
         return req
     }
 
-    func login(code: String, done: @escaping (Result<LoginResp, String>) -> Void) {
+    func login(code: String, done: @escaping (Result<LoginResp, APIError>) -> Void) {
         URLSession.shared.dataTask(with: request("api/login", method: "POST", body: ["code": code])) {
             data, resp, err in
-            if let err = err { done(.failure(err.localizedDescription)); return }
+            if let err = err { done(.failure(APIError(message: err.localizedDescription))); return }
             let status = (resp as? HTTPURLResponse)?.statusCode ?? 0
             guard let data = data,
                   let r = try? JSONDecoder().decode(LoginResp.self, from: data) else {
-                done(.failure("响应解析失败 (\(status))")); return
+                done(.failure(APIError(message: "响应解析失败 (\(status))"))); return
             }
             if r.ok { done(.success(r)) }
             else {
-                done(.failure(r.error ?? (status == 429 ? "尝试次数过多，请稍后再试" : "验证码错误")))
+                done(.failure(APIError(message:
+                    r.error ?? (status == 429 ? "尝试次数过多，请稍后再试" : "验证码错误"))))
             }
         }.resume()
     }
 
-    func getJSON(_ path: String, done: @escaping (Result<JSONDict, String>) -> Void) {
+    func getJSON(_ path: String, done: @escaping (Result<JSONDict, APIError>) -> Void) {
         URLSession.shared.dataTask(with: request(path, method: "GET")) { data, resp, err in
-            if let err = err { done(.failure(err.localizedDescription)); return }
+            if let err = err { done(.failure(APIError(message: err.localizedDescription))); return }
             guard let data = data,
                   let obj = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else {
-                done(.failure("响应解析失败")); return
+                done(.failure(APIError(message: "响应解析失败"))); return
             }
             if (resp as? HTTPURLResponse)?.statusCode == 401 {
-                done(.failure("unauthorized")); return
+                done(.failure(APIError(message: "unauthorized"))); return
             }
             done(.success(obj))
         }.resume()
     }
 
-    func postJSON(_ path: String, body: [String: Any], done: @escaping (Result<JSONDict, String>) -> Void) {
+    func postJSON(_ path: String, body: JSONDict, done: @escaping (Result<JSONDict, APIError>) -> Void) {
         URLSession.shared.dataTask(with: request(path, method: "POST", body: body)) { data, resp, err in
-            if let err = err { done(.failure(err.localizedDescription)); return }
+            if let err = err { done(.failure(APIError(message: err.localizedDescription))); return }
             guard let data = data,
                   let obj = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else {
-                done(.failure("响应解析失败")); return
+                done(.failure(APIError(message: "响应解析失败"))); return
             }
             if (resp as? HTTPURLResponse)?.statusCode == 401 {
-                done(.failure("unauthorized")); return
+                done(.failure(APIError(message: "unauthorized"))); return
             }
             done(.success(obj))
         }.resume()
@@ -93,9 +99,9 @@ final class API {
 
     /// multipart 文件上传
     func upload(path: String, remoteDir: String, fileURL: URL,
-                done: @escaping (Result<Bool, String>) -> Void) {
+                done: @escaping (Result<Bool, APIError>) -> Void) {
         guard let fileData = try? Data(contentsOf: fileURL) else {
-            done(.failure("无法读取文件")); return
+            done(.failure(APIError(message: "无法读取文件"))); return
         }
         let boundary = "----SVBoundary\(Int(Date().timeIntervalSince1970 * 1000))"
         var req = URLRequest(url: url(path))
@@ -110,7 +116,7 @@ final class API {
         append("\r\n--\(boundary)--\r\n")
         req.httpBody = body
         URLSession.shared.dataTask(with: req) { _, resp, err in
-            if let err = err { done(.failure(err.localizedDescription)); return }
+            if let err = err { done(.failure(APIError(message: err.localizedDescription))); return }
             done(.success((resp as? HTTPURLResponse)?.statusCode == 200))
         }.resume()
     }
