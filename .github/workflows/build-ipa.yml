@@ -32,7 +32,15 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGN_IDENTITY="" \
             DEVELOPMENT_TEAM="" \
-            | tail -40
+            2>&1 | tee build_full.log
+
+      - name: Print all compile errors
+        if: failure()
+        run: |
+          echo "========== ALL ERRORS =========="
+          grep -h "error:" build_full.log | sed 's/^.*Sources\/(Sources\/[0-9]*\/)?//' | sort -u | head -80
+          echo "========== END =========="
+          exit 1
 
       - name: Package IPA
         run: |

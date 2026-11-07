@@ -130,7 +130,7 @@ final class ConnectionViewController: UIViewController {
         connectBtn.isEnabled = false
         spinner.startAnimating()
 
-        API.shared.login(code: code) { [weak self] result in
+        API.shared.login(code: code) { [weak self] (result: Result<LoginResp, String>) in
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 self.connectBtn.isEnabled = true
