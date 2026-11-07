@@ -39,7 +39,7 @@ final class FilesViewController: UIViewController, UITableViewDataSource, UITabl
     // MARK: - 数据
     private func load() {
         let p = path.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        API.shared.getJSON("api/fs/list?path=\(p)") { [weak self] r in
+        API.shared.getJSON("api/fs/list?path=\(p)") { [weak self] (r: Result<JSONDict, String>) in
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 switch r {
@@ -143,7 +143,7 @@ final class FilesViewController: UIViewController, UITableViewDataSource, UITabl
         guard let base = API.shared.base else { return }
         let p = remotePath.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         let url = URL(string: base.absoluteString + "/api/fs/download?path=\(p)")!
-        alert("开始下载...", nil)
+        alert("开始下载...")
         URLSession.shared.downloadTask(with: url) { [weak self] local, resp, err in
             DispatchQueue.main.async {
                 guard let self = self else { return }
@@ -195,7 +195,7 @@ final class FilesViewController: UIViewController, UITableViewDataSource, UITabl
 extension FilesViewController: UIDocumentPickerDelegate {
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
         for u in urls {
-            API.shared.upload(path: "api/fs/upload", remoteDir: path, fileURL: u) { r in
+            API.shared.upload(path: "api/fs/upload", remoteDir: path, fileURL: u) { (r: Result<Bool, String>) in
                 DispatchQueue.main.async {
                     self.alert((try? r.get()) != nil ? "上传完成" : "上传失败")
                     self.load()

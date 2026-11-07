@@ -34,6 +34,7 @@ final class KeyboardBar: UIInputView {
         addSubview(scroll)
         var x: CGFloat = 8
         let h: CGFloat = 38
+        @discardableResult
         func addBtn(_ title: String, _ action: @escaping (UIButton) -> Void) -> UIButton {
             let b = UIButton(type: .system)
             b.setTitle(title, for: .normal)

@@ -254,7 +254,7 @@ final class RemoteViewController: UIViewController, CanvasDelegate, UITextFieldD
             self.present(a, animated: true)
         })
         alert.addAction(.init(title: "⬇ 取回远程剪贴板", style: .default) { _ in
-            API.shared.getJSON("api/clipboard") { r in
+            API.shared.getJSON("api/clipboard") { (r: Result<JSONDict, String>) in
                 DispatchQueue.main.async {
                     if case .success(let d) = r, let t = d["text"] as? String {
                         UIPasteboard.general.string = t

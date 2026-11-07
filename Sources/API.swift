@@ -1,5 +1,7 @@
 import Foundation
 
+typealias JSONDict = [String: Any]
+
 struct LoginResp: Decodable {
     let ok: Bool
     let device_id: String?
@@ -61,7 +63,7 @@ final class API {
         }.resume()
     }
 
-    func getJSON(_ path: String, done: @escaping (Result<[String: Any], String>) -> Void) {
+    func getJSON(_ path: String, done: @escaping (Result<JSONDict, String>) -> Void) {
         URLSession.shared.dataTask(with: request(path, method: "GET")) { data, resp, err in
             if let err = err { done(.failure(err.localizedDescription)); return }
             guard let data = data,
@@ -75,7 +77,7 @@ final class API {
         }.resume()
     }
 
-    func postJSON(_ path: String, body: [String: Any], done: @escaping (Result<[String: Any], String>) -> Void) {
+    func postJSON(_ path: String, body: [String: Any], done: @escaping (Result<JSONDict, String>) -> Void) {
         URLSession.shared.dataTask(with: request(path, method: "POST", body: body)) { data, resp, err in
             if let err = err { done(.failure(err.localizedDescription)); return }
             guard let data = data,
