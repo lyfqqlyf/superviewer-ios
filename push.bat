@@ -48,10 +48,15 @@ goto :end
 
 :push_fail
 echo.
+set /p FORCE=Push rejected. Overwrite remote with local? (y/n):
+if /i "%FORCE%"=="y" (
+    git push -u origin main --force
+    goto :end
+)
 echo [FAILED] common causes:
-echo   1. repo not created yet - create an EMPTY repo on github.com first, then re-run
-echo   2. wrong URL / no permission - re-run and paste the URL again
-echo   3. browser login window was closed - re-run to login again
+echo   1. remote has other commits - answer y to force overwrite above
+echo   2. repo not created yet - create an EMPTY repo on github.com first, then re-run
+echo   3. wrong URL / no permission - re-run and paste the URL again
 
 :end
 echo.
