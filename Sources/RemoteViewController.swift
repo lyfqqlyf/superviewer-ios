@@ -184,7 +184,19 @@ final class RemoteViewController: UIViewController, CanvasDelegate, UITextFieldD
     private func handleFrame(_ data: Data) {
         frameCount += 1
         guard let img = UIImage(data: data) else { return }
-        DispatchQueue.main.async { self.canvas.image = img }
+        DispatchQueue.main.async {
+            // hello 里 size 可能为 null (抓屏未就绪), 从首帧位图取实际尺寸
+            if self.streamSize.width < 2 {
+                self.streamSize = img.size
+                self.canvas.streamSize = img.size
+                if !self.pointerInit {
+                    self.pointer = CGPoint(x: img.size.width / 2, y: img.size.height / 2)
+                    self.canvas.pointer = self.pointer
+                    self.pointerInit = true
+                }
+            }
+            self.canvas.image = img
+        }
     }
 
     // MARK: - 工具栏动作
